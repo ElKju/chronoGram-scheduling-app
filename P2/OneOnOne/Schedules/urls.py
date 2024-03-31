@@ -1,14 +1,16 @@
 from django.urls import path
-from .views import ScheduleCreateView, ScheduleDetailView, ScheduleListView, ScheduleDeleteView, ScheduleUpdateView, ScheduleInvitationAPIView
+from .views import CalendarViewSet, InviteeListView, InviteeDetailView, InviteeOptionsView, EventListView, EventDetailView
+from rest_framework.routers import DefaultRouter
 
-
-app_name = 'Schedules'
+router = DefaultRouter()
+router.register(r'calendars', CalendarViewSet, basename='calendar')
 
 urlpatterns = [
-    path('schedules/create/', ScheduleCreateView.as_view(), name='schedule-create'),
-    path('schedules/<int:pk>/details/', ScheduleDetailView.as_view(), name='schedule-detail'),
-    path('schedules/<int:pk>/edit/', ScheduleUpdateView.as_view(), name='schedule-edit'),
-    path('schedules/<int:pk>/delete/', ScheduleDeleteView.as_view(), name='schedule-delete'),
-    path('schedules/list/all/', ScheduleListView.as_view(), name='schedule-list'),
-    path('schedules/<int:pk>/rsvp/', ScheduleInvitationAPIView.as_view(), name='schedule-invitee-rsvp'),
+    path('calendars/<int:calendar_id>/invitees/', InviteeListView.as_view(), name='invitee-list'),
+    path('calendars/<int:calendar_id>/invitees/<int:invitee_id>/', InviteeDetailView.as_view(), name='invitee-detail'),
+    path('invitee/<random_link_token>/', InviteeOptionsView.as_view(), name='invitee-control'),
+    path('calendars/<int:calendar_id>/events/', EventListView.as_view(), name='event-list'),
+    path('calendars/<int:calendar_id>/events/<int:event_id>/', EventDetailView.as_view(), name='event-detail')
 ]
+
+urlpatterns += router.urls
