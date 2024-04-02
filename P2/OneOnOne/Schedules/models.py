@@ -24,13 +24,20 @@ class Availability(models.Model):
         return f"{self.calendar.title}: {str(self.start_time)}-{str(self.end_time)}"
 
 class Invitee(models.Model):
-    calendar = models.ForeignKey(Calendar, related_name='invitees', on_delete=models.CASCADE, editable=False)
-    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, editable=False)
-    selected_availability = models.ManyToManyField(Availability, blank=True)
+    calendar = models.ForeignKey(Calendar, related_name='invitees', on_delete=models.CASCADE)
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
     random_link_token = models.UUIDField(default=uuid.uuid4, editable=False)
 
     def __str__(self):
         return f"{self.contact.first_name} invited to {self.calendar.title}"
+
+class Priority(models.Model):
+    invitee = models.ForeignKey(Invitee, on_delete=models.CASCADE, editable=False, related_name='selected_availability')
+    availability = models.ForeignKey(Availability, on_delete=models.CASCADE)
+    priority = models.IntegerField(default=1)  # 1 default priority, 2 high priority
+
+    def __str__(self):
+        return f"{self.invitee.contact.first_name}'s selected availability: {self.availability}"
 
 class Event(models.Model):
     calendar = models.ForeignKey(Calendar, on_delete=models.CASCADE)

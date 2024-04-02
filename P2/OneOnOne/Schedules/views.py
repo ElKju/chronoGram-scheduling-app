@@ -1,9 +1,10 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Calendar, Invitee, Availability, Event
-from .serializer import CalendarSerializer, InviteeSerializer, AvailabilitySerializer, EventSerializer
+from .models import Calendar, Invitee, Availability, Event, Priority
+from .serializer import CalendarSerializer, InviteeSerializer, AvailabilitySerializer, EventSerializer, PrioritySerializer
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
 class CalendarViewSet(viewsets.ViewSet):
     def list(self, request):
@@ -78,7 +79,7 @@ class InviteeListView(APIView):
         
         serializer = InviteeSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(calendar=calendar)
+            serializer.save(calendar=calendar, contact_id=request.data['contact'])
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -125,6 +126,8 @@ class InviteeDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class InviteeOptionsView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, random_link_token):
         try:
             invitee = Invitee.objects.get(random_link_token=random_link_token)
@@ -136,19 +139,15 @@ class InviteeOptionsView(APIView):
 
         serializer = AvailabilitySerializer(available_times, many=True)
         return Response(serializer.data)
-
+    
     def put(self, request, random_link_token):
         try:
             invitee = Invitee.objects.get(random_link_token=random_link_token)
         except Invitee.DoesNotExist:
-            return Response({"error": "Invitee not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = InviteeSerializer(invitee, data=request.data)
-        
-        for availability in request.data.get('selected_availability', []):
-            if Availability.objects.get(pk=availability).calendar != invitee.calendar:
-                return Response({"error": f"Selected availability (id={availability}) does not belong to the specified calendar"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({"error": "Invitee token not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = InviteeSerializer(invitee, data=request.data, partial=True)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
