@@ -20,9 +20,9 @@ const BannerAndCardsContainer: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <Banner />
       <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%' }}>
-        <ActionAreaCard title="Contacts" content="Create new contacts or manage your existing contacts here." buttonText="Manage Contacts" image = {contactImg} navigateTo='contacts/list/all'/>
+        <ActionAreaCard title="Contacts" content="Create new contacts or manage your existing contacts here." buttonText="Manage Contacts" image = {contactImg} navigateTo='/contacts/list/all'/>
         <ActionAreaCard title="Schedules" content="Create new 1:1 schedules or manage your existing schedules here." buttonText="Manage Schedules" image = {scheduleImg} navigateTo = '' />
-        <ActionAreaCard title="Edit Account Information" content="Manage account details here." buttonText="Edit Account" image = {editImg} navigateTo =''/>
+        <ActionAreaCard title="Edit Account Information" content="Manage account details here." buttonText="Edit Account" image = {editImg} navigateTo ='/account/edit'/>
       </div>
     </div>
   );
