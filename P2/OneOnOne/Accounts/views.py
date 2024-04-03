@@ -73,6 +73,8 @@ class LogoutView(APIView):
         logout(request)
         return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
 
+from django.contrib.auth.hashers import make_password
+
 class AccountEditView(APIView):
     """Edit the current user's account details.
 
@@ -87,7 +89,15 @@ class AccountEditView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        user = request.user
+        data = request.data.copy()  # Copy the request data to avoid modifying original data
+        
+        # Check if password field is present in request data and hash it
+        if 'password' in data:
+            data['password'] = make_password(data['password'])
+
+        print(request.data)
+        serializer = UserSerializer(user, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
