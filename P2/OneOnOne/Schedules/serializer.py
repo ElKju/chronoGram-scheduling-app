@@ -12,6 +12,13 @@ class PrioritySerializer(serializers.ModelSerializer):
 class InviteeSerializer(serializers.ModelSerializer):
     selected_availability = PrioritySerializer(many=True)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set required=False for all fields except 'contact'
+        for field_name in self.fields.keys():
+            if field_name != 'contact':
+                self.fields[field_name].required = False
+
     class Meta:
         model = Invitee
         fields = ['calendar', 'contact', 'random_link_token', 'selected_availability']
@@ -45,7 +52,7 @@ class CalendarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Calendar
-        fields = ['title', 'owner', 'description', 'duration', 'availability_set', 'invitees']
+        fields = ['id', 'title', 'owner', 'description', 'duration', 'availability_set', 'invitees']
 
     def create(self, validated_data):
         availability_data = validated_data.pop('availability_set', [])

@@ -5,6 +5,8 @@ from .models import Calendar, Invitee, Availability, Event, Priority
 from .serializer import CalendarSerializer, InviteeSerializer, AvailabilitySerializer, EventSerializer, PrioritySerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from django.core.mail import send_mail
+from django.conf import settings
 
 class CalendarViewSet(viewsets.ViewSet):
     def list(self, request):
@@ -27,6 +29,16 @@ class CalendarViewSet(viewsets.ViewSet):
         serializer = CalendarSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+
+            for invitee in Invitee.objects.filter(calendar__pk=serializer.data["id"]):
+                send_mail(
+                    f"Invitation to {invitee.calendar.title}",
+                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.first_name}.\n Please go to http://127.0.0.1:8000/invitee/{invitee.random_link_token} to rsvp",
+                    settings.EMAIL_HOST_USER,
+                    [invitee.contact.email_address],
+                    fail_silently=False
+                )
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
