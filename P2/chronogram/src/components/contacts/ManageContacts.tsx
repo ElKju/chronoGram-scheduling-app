@@ -2,17 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { Button, CircularProgress} from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddContactModal from './AddContactModal';
+import { Contact, ContactFormData } from './contactInterfaces';
+import EditContactModal from './EditContactModal';
 
 const ManageContacts: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [totalContacts, setTotalContacts] = useState<number>(0);
-  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  let previousUrl = useRef<string | null>(null);
+  let nextUrl = useRef<string | null>(null);
+  const [isAddContactModalOpen, setIsAddContactModalOpen] = useState<boolean>(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const contactInit: Contact = {
+    id:111111111111,
+    first_name: "testing",
+    last_name: "testing",
+    email_address: "testing@gmail.com"
+  }
+  const [selectedContact, setSelectedContact] = useState<Contact>(contactInit);
+  const [url, setUrl] = useState<string>('http://127.0.0.1:8000/contacts/list/all');
+
 
   useEffect(() => {
-    fetchContacts('http://127.0.0.1:8000/contacts/list/all');
-  }, []);
+    fetchContacts(url);
+  }, [url]);
 
   const fetchContacts = async (url: string) => {
     try {
@@ -26,13 +43,11 @@ const ManageContacts: React.FC = () => {
         throw new Error('Failed to fetch contacts');
       }
       const data = await response.json();
-      const contactsWithId = data.results.map((contact: Contact, index: number) => ({ ...contact, id: index + 1 }));
+      nextUrl.current = data.next;
+      previousUrl.current = data.previous;
+      const contactsWithId = data.results.map((contact: Contact) => ({ ...contact}));
       setTotalContacts(data.count);
       setContacts(contactsWithId);
-      setNextPageUrl(data.next);
-      if(data.next===null){
-        setNextPageUrl(data.previous)
-      }
       setLoading(false);
       setError(null);
     } catch (error) {
@@ -43,36 +58,100 @@ const ManageContacts: React.FC = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: 'first_name', headerName: 'First Name', width: 150, editable: true},
-    { field: 'last_name', headerName: 'Last Name', width: 150, editable: true },
-    { field: 'email_address', headerName: 'Email Address', width: 300, editable: true },
+    { field: 'first_name', headerName: 'First Name', width: 150, headerAlign: 'center'},
+    { field: 'last_name', headerName: 'Last Name', width: 150, headerAlign: 'center'},
+    { field: 'email_address', headerName: 'Email Address', width: 300, headerAlign: 'center'},
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 150,
+      headerAlign: 'center',
+      width: 175,
       renderCell: (params) => (
-        <>
-          <Button onClick={() => handleEdit(params.row.id)}>Edit</Button>
-          <Button onClick={() => handleDelete(params.row.id)}>Delete</Button>
-          <Button onClick={() => handleDelete(params.row.id)}>Test</Button>
-        </>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Button 
+            style={{ textTransform: 'none', fontSize: '1rem' }} 
+            startIcon={<EditIcon />} 
+            onClick={() => handleEditButtonClick(params.row.id)}>Edit</Button>
+            <EditContactModal
+              open={isEditModalOpen}
+              onClose={() => setIsEditModalOpen(false)}
+              onSubmit={handleEditContact} 
+              contact={selectedContact}/>
+          <Button 
+            style = {{textTransform: 'none', fontSize:'1rem'}} 
+            startIcon = {<DeleteIcon/>} 
+            onClick={() => handleDelete(params.row.id)}>Delete</Button>
+        </div>
       ),
+      
     },
   ];
 
-  const handleEdit = (contactId: number) => {
-    // Handle edit action here
-    console.log(`Editing contact with ID: ${contactId}`);
+  const handleAddContact = async (contactData: ContactFormData) => {
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/contacts/create/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactData),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to edit contact');
+      }
+    } catch (error) {
+      console.error('Error editing contact:', error);
+    }
+    setIsAddContactModalOpen(false);
+    window.location.reload()
   };
 
-  const handleDelete = (contactId: number) => {
-    // Handle delete action here
-    console.log(`Deleting contact with ID: ${contactId}`);
+  const handleEditButtonClick = (contactId: number) => {
+    const selectedContact = contacts.find(contact => contact.id === contactId);
+    if (selectedContact!==null && selectedContact!==undefined) {
+      // If the contact is found, set it as the selected contact and open the edit modal
+      setSelectedContact(selectedContact);
+      setIsEditModalOpen(true);
+    } else {
+      console.error(`Contact with ID ${contactId} not found.`);
+    }
   };
 
-  const handleAdd = () => {
-    // Handle delete action here
-    console.log('Add contact here');
+  const handleEditContact = async (editedContact: ContactFormData, contactId: number) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/contacts/${contactId}/edit/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editedContact),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to edit contact');
+      }
+    } catch (error) {
+      console.error('Error editing contact:', error);
+    }
+    setIsEditModalOpen(false);
+    window.location.reload()
+  };
+
+  const handleDelete = async (contactId: number) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/contacts/delete/?contact_ids=${contactId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete contact');
+      }
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+    }
+    window.location.reload()
   };
 
   if (loading) {
@@ -83,9 +162,15 @@ const ManageContacts: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
-  const handleNextPage = () => {
-    if (nextPageUrl) {
-      fetchContacts(nextPageUrl);
+
+  const handlePage = (model: GridPaginationModel, details: GridCallbackDetails<any>) => {
+
+    if(previousUrl.current==null && nextUrl.current){
+      setUrl(nextUrl.current)
+    }
+
+    if (previousUrl.current && nextUrl.current == null){
+      setUrl(previousUrl.current)
     }
   };
 
@@ -95,37 +180,32 @@ const ManageContacts: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh', 
+        minHeight: '100vh',
+        paddingBottom: '3rem',
       }}
     >
       <h1>Manage Contacts</h1>
+      <br/>
+      <div style={{ flex: '1', overflowY: 'auto' }}>
+      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-start' }}>
       <Button
         variant="contained"
         startIcon={<AddIcon />}
-        onClick={() => handleAdd()}
+        onClick={() => setIsAddContactModalOpen(true)}
+        style={{ textTransform: 'none', fontSize: '1rem', padding: '5px 10px' }}
       >
         Add Contact
       </Button>
-      <div
-        style={{
-          height: 'calc(100% - 200px)', 
-          width: '80vw', 
-          maxWidth: '1000px', 
-        }}
-      ></div>
-      <div
-        style={{
-          height: 'calc(100% - 100px)', 
-          width: '80vw', 
-          maxWidth: '1000px', 
-        }}
-      >
+      <AddContactModal
+        open={isAddContactModalOpen}
+        onClose={() => setIsAddContactModalOpen(false)}
+        onSubmit={handleAddContact}
+      />
+      </div>
         <DataGrid 
           rowCount={totalContacts} 
           rows={contacts} 
           columns={columns}
-          editMode="row"
           initialState={{
             pagination: {
               paginationModel: {
@@ -134,19 +214,12 @@ const ManageContacts: React.FC = () => {
             },
           }}
           paginationMode="server"
-          onPaginationModelChange={handleNextPage}
+          onPaginationModelChange={handlePage}
           pageSizeOptions={[10]}
         />
       </div>
     </div>
-  );  
+  );
 };
 
 export default ManageContacts;
-
-interface Contact {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email_address: string;
-}
