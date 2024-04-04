@@ -1,3 +1,4 @@
 *node_modules/
 *migrations/
 *__pycache__/
+*.DS_Store
