@@ -11,7 +11,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { ScheduleFormData, Availability_Set, Invitees } from './scheduleInterfaces';
+import { ScheduleFormData, Availability_SetFormData, Invitees } from './scheduleInterfaces';
 import { SelectChangeEvent } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
 import { Contact } from '../contacts/contactInterfaces';
@@ -29,18 +29,31 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
   const [description, setDescription] = useState('');
   const [value, setValue] = React.useState<Dayjs | null>(dayjs('2024-04-01T15:30'));
   const [valueDuration, setDuration] = React.useState<Dayjs | null>(dayjs('2024-04-01T15:30'));
+  const [availabilities, setAvailabilities] = useState<Availability_SetFormData[]>([]);
+  const [selectedAvailabilities, setSelectedAvailabilities] = useState<Availability_SetFormData[]>([])
 
   const handleAddAvailability = () => {
     if (value && valueDuration) {
       const hour = valueDuration.hour();
       const minutes = valueDuration.minute();
-      const newAvailability: Availability_Set = {
-        id: Date.now(), // Generate unique ID for the new availability
+
+      //End Date Computation:
+      const addingEndDateHours = value.add(hour,'hours')
+      const addingEndDateMinutes = addingEndDateHours.add(minutes,'minutes')
+      console.log(value)
+
+      const newAvailability: Availability_SetFormData = {
         start_time: value,
-        end_time: value,
+        end_time: addingEndDateMinutes,
       };
-     console.log("testing")
+      setAvailabilities([...availabilities, newAvailability]);
+      setSelectedAvailabilities([...selectedAvailabilities, newAvailability])
     }
+  };
+
+  const isOptionDisabled = (option: Availability_SetFormData) => {
+    // Check if the option is already selected
+    return selectedAvailabilities.some((availability) => availability.start_time === option.start_time);
   };
 
   const handleInviteeChange = (event: SelectChangeEvent<number>) => {
@@ -55,10 +68,6 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
     //onSubmit(formData);
     onClose();
   };
-
-  const onCloseTest = () => {
-    console.log(valueDuration)
-  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -102,6 +111,26 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
           <Autocomplete
               multiple
               id="tags-standard"
+              options = {availabilities}
+              getOptionLabel={(option) => (option.start_time.subtract(4, 'hour')).toString()}
+              value={selectedAvailabilities} // Use controlled value
+              onChange={(event, newValue) => {
+                setSelectedAvailabilities(newValue);
+              }}
+              getOptionDisabled={isOptionDisabled}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="standard"
+                  label="Selected Time Slots"
+                  placeholder="Availabilities"
+                />
+              )}
+            />
+
+          <Autocomplete
+              multiple
+              id="tags-standard1"
               options = {contacts}
               getOptionLabel={(option) => option.first_name}
               defaultValue={[]}
@@ -109,8 +138,8 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
                 <TextField
                   {...params}
                   variant="standard"
-                  label="Multiple values"
-                  placeholder="Favorites"
+                  label="Invite Contacts"
+                  placeholder="Invite Contacts"
                 />
               )}
             />

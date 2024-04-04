@@ -27,6 +27,11 @@ export interface ScheduleFormData {
   title: string;
   description: string;
   duration: string;
-  availability_set:Availability_Set[];
+  availability_set:Availability_SetFormData[];
   invitees: Invitees[];
+}
+
+export interface Availability_SetFormData {
+  start_time: Dayjs;
+  end_time: Dayjs;
 }
