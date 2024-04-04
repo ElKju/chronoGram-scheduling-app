@@ -15,11 +15,10 @@ const ManageSchedules: React.FC = () => {
   const [schedules, setSchedules] = useState<Calendar[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalContacts, setTotalContacts] = useState<number>(0);
   const [totalSchedules, setTotalSchedules] = useState<number>(0);
   let previousUrl = useRef<string | null>(null);
   let nextUrl = useRef<string | null>(null);
-  const [isAddContactModalOpen, setIsAddContactModalOpen] = useState<boolean>(false);
+  const [isAddScheduleModalOpen, setIsAddScheduleModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const contactInit: Contact = {
     id:111111111111,
@@ -107,14 +106,16 @@ const ManageSchedules: React.FC = () => {
     },
   ];
 
-  const handleAddContact = async (contactData: ScheduleFormData) => {
+  const handleAddCalendar = async (scheduleData: ScheduleFormData) => {
     try {
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`http://127.0.0.1:8000/calendars/`, {
         method: 'POST',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(contactData),
+        body: JSON.stringify(scheduleData),
       });
       if (!response.ok) {
         throw new Error('Failed to add schedules');
@@ -122,8 +123,8 @@ const ManageSchedules: React.FC = () => {
     } catch (error) {
       console.error('Error adding schedules:', error);
     }
-    setIsAddContactModalOpen(false);
-    window.location.reload()
+    setIsAddScheduleModalOpen(false);
+    //window.location.reload()
   };
 
   const handleEditButtonClick = (contactId: number) => {
@@ -210,15 +211,15 @@ const ManageSchedules: React.FC = () => {
       <Button
         variant="contained"
         startIcon={<AddIcon />}
-        onClick={() => setIsAddContactModalOpen(true)}
+        onClick={() => setIsAddScheduleModalOpen(true)}
         style={{ textTransform: 'none', fontSize: '1rem', padding: '5px 10px' }}
       >
         Create Schedule
       </Button>
       <AddScheduleModal
-        open={isAddContactModalOpen}
-        onClose={() => setIsAddContactModalOpen(false)}
-        onSubmit={handleAddContact}
+        open={isAddScheduleModalOpen}
+        onClose={() => setIsAddScheduleModalOpen(false)}
+        onSubmit={handleAddCalendar}
         contacts = {contacts}
       />
       </div>

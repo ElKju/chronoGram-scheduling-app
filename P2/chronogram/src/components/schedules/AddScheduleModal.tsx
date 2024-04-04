@@ -11,8 +11,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { ScheduleFormData, Availability_SetFormData, Invitees } from './scheduleInterfaces';
-import { SelectChangeEvent } from '@mui/material';
+import { ScheduleFormData, Availability_SetFormData, Invitees_FormData, Availability_SetFormDataFinal } from './scheduleInterfaces';
 import dayjs, { Dayjs } from 'dayjs';
 import { Contact } from '../contacts/contactInterfaces';
 import { TimeField } from '@mui/x-date-pickers';
@@ -31,6 +30,7 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
   const [valueDuration, setDuration] = React.useState<Dayjs | null>(dayjs('2024-04-01T15:30'));
   const [availabilities, setAvailabilities] = useState<Availability_SetFormData[]>([]);
   const [selectedAvailabilities, setSelectedAvailabilities] = useState<Availability_SetFormData[]>([])
+  const [contact, setContacts] =  useState<Contact[]>([]);
 
   const handleAddAvailability = () => {
     if (value && valueDuration) {
@@ -40,33 +40,54 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
       //End Date Computation:
       const addingEndDateHours = value.add(hour,'hours')
       const addingEndDateMinutes = addingEndDateHours.add(minutes,'minutes')
-      console.log(value)
+      
+      // Check if the start date already exists in availabilities
+      const startDateExists = availabilities.some(availability => {
+        // Use Dayjs methods for date comparison
+        return dayjs(availability.start_time).isSame(value, 'hours') &&
+              dayjs(availability.start_time).isSame(value, 'minutes');
+      });
 
-      const newAvailability: Availability_SetFormData = {
-        start_time: value,
-        end_time: addingEndDateMinutes,
-      };
-      setAvailabilities([...availabilities, newAvailability]);
-      setSelectedAvailabilities([...selectedAvailabilities, newAvailability])
+      if (startDateExists) {
+        // Alert user or handle duplicate start date scenario
+        console.log("Availability with this start date already exists.");
+      } else {
+        
+        const newAvailability:Availability_SetFormData = {
+          start_time: value,
+          end_time: addingEndDateMinutes,
+        };
+
+        // Update availabilities and selectedAvailabilities state
+        setAvailabilities([...availabilities, newAvailability]);
+        setSelectedAvailabilities([...selectedAvailabilities, newAvailability]);
+      }
     }
   };
 
-  const isOptionDisabled = (option: Availability_SetFormData) => {
-    // Check if the option is already selected
-    return selectedAvailabilities.some((availability) => availability.start_time === option.start_time);
-  };
-
-  const handleInviteeChange = (event: SelectChangeEvent<number>) => {
-    console.log("ldfklkdfldkflkdf")
-    //const selectedInviteeId = e.target.value as number;
-    //const selectedInvitee: Invitees = { id: selectedInviteeId, calendar: null, contact: null }; // You need to fetch calendar and contact based on the selected ID
-    //setFormData({ ...formData, invitees: [...formData.invitees, selectedInvitee] });
-  };
-
   const handleSubmit = () => {
-    console.log(value)
-    //onSubmit(formData);
-    onClose();
+    //Convert contacts to invitee form data
+    const invitees: Invitees_FormData[] = contact.map(contact => ({
+      contact: contact.id,
+    }));
+
+    const availabilitiesFinal: Availability_SetFormDataFinal[] = availabilities.map(({ start_time, end_time }) => ({
+      start_time: start_time.toISOString(), // Convert to ISO 8601 format
+      end_time: end_time.toISOString(), // Convert to ISO 8601 format
+    }))
+
+    if(valueDuration){
+      const calendarFormData: ScheduleFormData ={
+        title: title,
+        description: description,
+        duration: valueDuration.format('HH:mm:ss'),
+        availability_set: availabilitiesFinal,
+        invitees: invitees,
+      }
+      console.log(calendarFormData)
+      onSubmit(calendarFormData);
+      onClose();
+    }
   };
 
   return (
@@ -107,7 +128,7 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
             value={value}
             onChange={(newValue) => setValue(newValue)}
           />
-          <Button onClick={handleAddAvailability}>Add Availability</Button>
+          <Button onClick={handleAddAvailability}>Add Time Slot</Button>
           <Autocomplete
               multiple
               id="tags-standard"
@@ -115,9 +136,13 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
               getOptionLabel={(option) => (option.start_time.subtract(4, 'hour')).toString()}
               value={selectedAvailabilities} // Use controlled value
               onChange={(event, newValue) => {
+                // Remove deselected availabilities from availabilities list
+                const updatedAvailabilities = availabilities.filter(availability =>
+                  newValue.includes(availability)
+                );
+                setAvailabilities(updatedAvailabilities);
                 setSelectedAvailabilities(newValue);
               }}
-              getOptionDisabled={isOptionDisabled}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -134,6 +159,7 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
               options = {contacts}
               getOptionLabel={(option) => option.first_name}
               defaultValue={[]}
+              onChange={(event, value) => setContacts(value)} // prints the selected value
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -143,7 +169,6 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
                 />
               )}
             />
-        
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>

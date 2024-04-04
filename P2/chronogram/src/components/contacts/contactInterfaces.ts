@@ -3,10 +3,10 @@ export interface Contact {
     first_name: string;
     last_name: string;
     email_address: string;
-  }
+}
   
 export interface ContactFormData {
     first_name: string;
     last_name: string;
     email_address: string;
-  }
+}

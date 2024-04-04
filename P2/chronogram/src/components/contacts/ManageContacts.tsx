@@ -90,11 +90,13 @@ const ManageContacts: React.FC = () => {
   const handleAddContact = async (contactData: ContactFormData) => {
 
     try {
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`http://127.0.0.1:8000/contacts/create/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        },
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         body: JSON.stringify(contactData),
       });
       if (!response.ok) {
