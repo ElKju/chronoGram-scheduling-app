@@ -1,5 +1,5 @@
 import { Contact } from "../contacts/contactInterfaces";
-import dayjs, { Dayjs } from 'dayjs';
+import { Dayjs } from 'dayjs';
 
 export interface Calendar {
   id: number;

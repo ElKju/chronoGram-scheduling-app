@@ -36,6 +36,10 @@ class ContactDetailView(generics.RetrieveAPIView):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
 
+    def get_queryset(self):
+        # Filter the queryset based on the current user's id
+        return self.queryset.filter(owner=self.request.user)
+
 class ContactUpdateView(generics.UpdateAPIView):
     """
     Summary:
@@ -48,6 +52,22 @@ class ContactUpdateView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Check if the user updating the contact is the owner
+        if instance.owner != request.user:
+            return Response(
+                {"error": "You do not have permission to update this contact."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.pop('partial', False))
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
 
 class ContactDeleteView(generics.DestroyAPIView):
     """
@@ -65,13 +85,18 @@ class ContactDeleteView(generics.DestroyAPIView):
         contact_ids_str = request.query_params.get('contact_ids', None)
         if contact_ids_str:
             contact_ids = contact_ids_str.split(',')
-            try:
-                for contact_id in contact_ids:
-                    contact = get_object_or_404(Contact, pk=contact_id)
-                    contact.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            except Contact.DoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+            for contact_id in contact_ids:
+                contact = get_object_or_404(Contact, pk=contact_id)
+                
+                # Check if the owner of the contact is the current user
+                if contact.owner != request.user:
+                    return Response(
+                        {"error": "You do not have permission to delete this contact."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                contact.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -82,7 +107,8 @@ class ContactListView(generics.ListAPIView):
     Args:
         Method: GET
     """
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ContactSerializer
-    pagination_class = PageNumberPagination
-    queryset = Contact.objects.all()
+    def get_queryset(self):
+        # Filter the queryset based on the current user's id
+        return Contact.objects.filter(owner=self.request.user)

@@ -30,7 +30,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px', paddingBottom: '83px'}}>
       <h2 style={{ fontSize: '1.8rem', marginBottom: '20px' }}>Login</h2>
       <input
         type="text"

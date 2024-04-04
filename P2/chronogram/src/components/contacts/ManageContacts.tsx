@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, CircularProgress} from '@mui/material';
-import { DataGrid, GridCallbackDetails, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -13,8 +13,6 @@ const ManageContacts: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [totalContacts, setTotalContacts] = useState<number>(0);
-  let previousUrl = useRef<string | null>(null);
-  let nextUrl = useRef<string | null>(null);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const contactInit: Contact = {
@@ -45,10 +43,8 @@ const ManageContacts: React.FC = () => {
         throw new Error('Failed to fetch contacts');
       }
       const data = await response.json();
-      nextUrl.current = data.next;
-      previousUrl.current = data.previous;
-      const contactsWithId = data.results.map((contact: Contact) => ({ ...contact}));
-      setTotalContacts(data.count);
+      const contactsWithId = data.map((contact: Contact) => ({ ...contact}));
+      setTotalContacts(data.length);
       setContacts(contactsWithId);
       setLoading(false);
       setError(null);
@@ -60,9 +56,9 @@ const ManageContacts: React.FC = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: 'first_name', headerName: 'First Name', width: 150, headerAlign: 'center'},
-    { field: 'last_name', headerName: 'Last Name', width: 150, headerAlign: 'center'},
-    { field: 'email_address', headerName: 'Email Address', width: 300, headerAlign: 'center'},
+    { field: 'first_name', headerName: 'First Name', width: 150, headerAlign: 'center', align: 'center'},
+    { field: 'last_name', headerName: 'Last Name', width: 150, headerAlign: 'center', align: 'center'},
+    { field: 'email_address', headerName: 'Email Address', width: 300, headerAlign: 'center', align: 'center'},
     {
       field: 'actions',
       headerName: 'Actions',
@@ -118,7 +114,7 @@ const ManageContacts: React.FC = () => {
       setSelectedContact(selectedContact);
       setIsEditModalOpen(true);
     } else {
-      console.error(`Contact with ID ${contactId} not found.`);
+      console.error(`Contact with id ${contactId} not found.`);
     }
   };
 
@@ -170,18 +166,6 @@ const ManageContacts: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
-
-  const handlePage = (model: GridPaginationModel, details: GridCallbackDetails<any>) => {
-
-    if(previousUrl.current==null && nextUrl.current){
-      setUrl(nextUrl.current)
-    }
-
-    if (previousUrl.current && nextUrl.current == null){
-      setUrl(previousUrl.current)
-    }
-  };
-
   return (
     <div
       style={{
@@ -221,8 +205,7 @@ const ManageContacts: React.FC = () => {
               },
             },
           }}
-          paginationMode="server"
-          onPaginationModelChange={handlePage}
+          paginationMode="client"
           pageSizeOptions={[10]}
         />
       </div>

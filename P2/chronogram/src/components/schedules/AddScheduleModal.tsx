@@ -26,8 +26,8 @@ interface AddScheduleModalProps {
 const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSubmit, contacts }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [value, setValue] = React.useState<Dayjs | null>(dayjs('2024-04-01T15:30'));
-  const [valueDuration, setDuration] = React.useState<Dayjs | null>(dayjs('2024-04-01T15:30'));
+  const [value, setValue] = React.useState<Dayjs | null>(dayjs());
+  const [valueDuration, setDuration] = React.useState<Dayjs | null>(dayjs('2024-04-01T00:30'));
   const [availabilities, setAvailabilities] = useState<Availability_SetFormData[]>([]);
   const [selectedAvailabilities, setSelectedAvailabilities] = useState<Availability_SetFormData[]>([])
   const [contact, setContacts] =  useState<Contact[]>([]);
@@ -171,8 +171,8 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
             />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} color="primary">Add Schedule</Button>
+          <Button style={{ textTransform: 'none', fontSize: '1rem', padding: '5px 10px' }} onClick={onClose}>Cancel</Button>
+          <Button style={{ textTransform: 'none', fontSize: '1rem', padding: '5px 10px' }} onClick={handleSubmit} color="primary">Add Schedule</Button>
         </DialogActions>
       </Dialog>
     </LocalizationProvider>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, CircularProgress } from '@mui/material';
-import { DataGrid, GridCallbackDetails, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -16,8 +16,6 @@ const ManageSchedules: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [totalSchedules, setTotalSchedules] = useState<number>(0);
-  let previousUrl = useRef<string | null>(null);
-  let nextUrl = useRef<string | null>(null);
   const [isAddScheduleModalOpen, setIsAddScheduleModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const contactInit: Contact = {
@@ -62,7 +60,7 @@ const ManageSchedules: React.FC = () => {
       });
 
       const dataContacts = await responseContacts.json();
-      const contactsWithId = dataContacts.results.map((contact: Contact) => ({ ...contact}));
+      const contactsWithId = dataContacts.map((contact: Contact) => ({ ...contact}));
       setContacts(contactsWithId);
       setLoading(false);
       setError(null);
@@ -182,17 +180,6 @@ const ManageSchedules: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
-  const handlePage = (model: GridPaginationModel, details: GridCallbackDetails<any>) => {
-
-    if(previousUrl.current==null && nextUrl.current){
-      setUrl(nextUrl.current)
-    }
-
-    if (previousUrl.current && nextUrl.current == null){
-      setUrl(previousUrl.current)
-    }
-  };
-
   return (
     <div
       style={{
@@ -233,8 +220,7 @@ const ManageSchedules: React.FC = () => {
               },
             },
           }}
-          paginationMode="server"
-          onPaginationModelChange={handlePage}
+          paginationMode="client"
           pageSizeOptions={[10]}
         />
       </div>
