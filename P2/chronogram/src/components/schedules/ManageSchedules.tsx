@@ -49,9 +49,7 @@ const ManageSchedules: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log(data.length)
       setTotalSchedules(data.length);
-      
       const schedulesWithIds = data.map((schedule: Calendar) => ({ ...schedule}));
       setSchedules(schedulesWithIds);
 
@@ -124,7 +122,7 @@ const ManageSchedules: React.FC = () => {
       console.error('Error adding schedules:', error);
     }
     setIsAddScheduleModalOpen(false);
-    //window.location.reload()
+    window.location.reload()
   };
 
   const handleEditButtonClick = (contactId: number) => {
@@ -157,16 +155,18 @@ const ManageSchedules: React.FC = () => {
     window.location.reload()
   };
 
-  const handleDelete = async (contactId: number) => {
+  const handleDelete = async (calendarId: number) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/contacts/delete/?contact_ids=${contactId}`, {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`http://127.0.0.1:8000/calendars/${calendarId}/`, {
         method: 'DELETE',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
       if (!response.ok) {
-        throw new Error('Failed to delete contact');
+        throw new Error('Failed to delete calendar');
       }
     } catch (error) {
       console.error('Error deleting contact:', error);
@@ -181,7 +181,6 @@ const ManageSchedules: React.FC = () => {
   if (error) {
     return <div>Error: {error}</div>;
   }
-
 
   const handlePage = (model: GridPaginationModel, details: GridCallbackDetails<any>) => {
 

@@ -33,9 +33,11 @@ const ManageContacts: React.FC = () => {
 
   const fetchContacts = async (url: string) => {
     try {
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(url, {
         method: 'GET',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -122,9 +124,11 @@ const ManageContacts: React.FC = () => {
 
   const handleEditContact = async (editedContact: ContactFormData, contactId: number) => {
     try {
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`http://127.0.0.1:8000/contacts/${contactId}/edit/`, {
         method: 'PUT',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(editedContact),
@@ -140,10 +144,12 @@ const ManageContacts: React.FC = () => {
   };
 
   const handleDelete = async (contactId: number) => {
+    const token = localStorage.getItem('accessToken');
     try {
       const response = await fetch(`http://127.0.0.1:8000/contacts/delete/?contact_ids=${contactId}`, {
         method: 'DELETE',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
