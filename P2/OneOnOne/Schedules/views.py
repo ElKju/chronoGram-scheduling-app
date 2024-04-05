@@ -56,8 +56,8 @@ class CalendarViewSet(viewsets.ViewSet):
             serializer.save()
             for invitee in Invitee.objects.filter(calendar__pk=serializer.data["id"]):
                 send_mail(
-                    f"Invitation to {invitee.calendar.title}",
-                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.first_name}.\n Please go to http://127.0.0.1:8000/invitee/{invitee.random_link_token} to rsvp",
+                    f"Invitation to {invitee.calendar.title} has been updated",
+                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.first_name}.\n Please go to http://127.0.0.1:8000/invitee/{invitee.random_link_token} to rsvp with the most recent timeslots",
                     settings.EMAIL_HOST_USER,
                     [invitee.contact.email_address],
                     fail_silently=False
