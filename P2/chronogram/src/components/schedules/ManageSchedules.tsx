@@ -4,10 +4,11 @@ import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import EditContactModal from './EditContactModal';
-import { Contact, ContactFormData } from '../contacts/contactInterfaces';
-import { Calendar, ScheduleFormData } from './scheduleInterfaces';
+import { Contact } from '../contacts/contactInterfaces';
+import { Availability_Set, Calendar, Invitees, ScheduleFormData } from './scheduleInterfaces';
 import AddScheduleModal from './AddScheduleModal';
+import EditScheduleModal from './EditScheduleModal';
+import dayjs, { Dayjs } from 'dayjs';
 
 const ManageSchedules: React.FC = () => {
   
@@ -18,19 +19,33 @@ const ManageSchedules: React.FC = () => {
   const [totalSchedules, setTotalSchedules] = useState<number>(0);
   const [isAddScheduleModalOpen, setIsAddScheduleModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const contactInit: Contact = {
-    id:111111111111,
-    first_name: "testing",
-    last_name: "testing",
-    email_address: "testing@gmail.com"
+  
+  const availability: Availability_Set = {
+    id: 1,
+    start_time: dayjs(),
+    end_time: dayjs(),
   }
-  const [selectedContact, setSelectedContact] = useState<Contact>(contactInit);
-  const [url, setUrl] = useState<string>('http://127.0.0.1:8000/calendars/');
+  const inviteeInit: Invitees = {
+    contact:111111111111,
+    calendar: 111111111111,
+    availability_sets: [availability],
+    random_link_token:"djkdkjdkfjfdkfkdj",
+  }
+  const scheduleInit: Calendar = {
+    id:111111111111,
+    owner: 123,
+    title: "testing",
+    description: "testing123",
+    duration: dayjs().toISOString(),
+    availability_set: [availability],
+    invitees: [inviteeInit]
+  }
+  const [selectedSchedule, setSelectedSchedule] = useState<Calendar>(scheduleInit);
 
 
   useEffect(() => {
-    fetchSchedules(url);
-  }, [url]);
+    fetchSchedules('http://127.0.0.1:8000/calendars/');
+  }, []);
 
   const fetchSchedules = async (url: string) => {
     try {
@@ -87,11 +102,12 @@ const ManageSchedules: React.FC = () => {
             style={{ textTransform: 'none', fontSize: '1rem' }} 
             startIcon={<EditIcon />} 
             onClick={() => handleEditButtonClick(params.row.id)}>Edit</Button>
-            <EditContactModal
+            <EditScheduleModal
               open={isEditModalOpen}
               onClose={() => setIsEditModalOpen(false)}
-              onSubmit={handleEditContact} 
-              contact={selectedContact}/>
+              onSubmit={handleEditSchedule} 
+              contacts={contacts}
+              calendar={selectedSchedule}/>
           <Button 
             style = {{textTransform: 'none', fontSize:'1rem'}} 
             startIcon = {<DeleteIcon/>} 
@@ -123,31 +139,33 @@ const ManageSchedules: React.FC = () => {
     window.location.reload()
   };
 
-  const handleEditButtonClick = (contactId: number) => {
-    const selectedContact = contacts.find(contact => contact.id === contactId);
-    if (selectedContact!==null && selectedContact!==undefined) {
+  const handleEditButtonClick = (scheduleId: number) => {
+    const scheduleSelected = schedules.find(schedule => schedule.id === scheduleId);
+    if (scheduleSelected!==null && scheduleSelected!==undefined) {
       // If the contact is found, set it as the selected contact and open the edit modal
-      setSelectedContact(selectedContact);
+      setSelectedSchedule(scheduleSelected);
       setIsEditModalOpen(true);
     } else {
-      console.error(`Contact with ID ${contactId} not found.`);
+      console.error(`Contact with ID ${scheduleId} not found.`);
     }
   };
 
-  const handleEditContact = async (editedContact: ContactFormData, contactId: number) => {
+  const handleEditSchedule = async (formData: ScheduleFormData, scheduleId: number) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/contacts/${contactId}/edit/`, {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`http://127.0.0.1:8000/calendars/${scheduleId}/`, {
         method: 'PUT',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editedContact),
+        body: JSON.stringify(formData),
       });
       if (!response.ok) {
-        throw new Error('Failed to edit contact');
+        throw new Error('Failed to edit schedule');
       }
     } catch (error) {
-      console.error('Error editing contact:', error);
+      console.error('Error editing schedule:', error);
     }
     setIsEditModalOpen(false);
     window.location.reload()
@@ -167,7 +185,7 @@ const ManageSchedules: React.FC = () => {
         throw new Error('Failed to delete calendar');
       }
     } catch (error) {
-      console.error('Error deleting contact:', error);
+      console.error('Error deleting calendar:', error);
     }
     window.location.reload()
   };

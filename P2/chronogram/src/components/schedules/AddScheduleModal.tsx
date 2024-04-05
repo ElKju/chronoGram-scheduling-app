@@ -84,7 +84,6 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
         availability_set: availabilitiesFinal,
         invitees: invitees,
       }
-      console.log(calendarFormData)
       onSubmit(calendarFormData);
       onClose();
     }
@@ -159,7 +158,7 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
               options = {contacts}
               getOptionLabel={(option) => option.first_name}
               defaultValue={[]}
-              onChange={(event, value) => setContacts(value)} // prints the selected value
+              onChange={(event, value) => setContacts(value)} 
               renderInput={(params) => (
                 <TextField
                   {...params}
