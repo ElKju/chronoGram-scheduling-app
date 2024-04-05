@@ -7,7 +7,7 @@ const Footer: React.FC = () => {
       <Toolbar style={{ justifyContent: 'center' }}>
         {/* Contact Us */}
         <Typography variant="body1" sx={{ color: 'black' }}>
-          Need help? <a href="#">Contact us</a>.
+          Need help? <a href="contact-us">Contact us</a>.
         </Typography>
       </Toolbar>
     </AppBar>
