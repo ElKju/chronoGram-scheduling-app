@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Calendar, Availability, Invitee, Event, Priority
+from .models import Calendar, Availability, Invitee, Event, Priority, SuggestedEvent, SuggestedSchedule
 from django.contrib.auth.models import User
 from Contacts.models import Contact
 import uuid
@@ -95,3 +95,22 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'calendar', 'invitee', 'timeslot']
+
+class SuggestedEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuggestedEvent
+        fields = ['id', 'availability', 'invitee']
+
+class SuggestedScheduleSerializer(serializers.ModelSerializer):
+    events = SuggestedEventSerializer(many=True)
+
+    class Meta:
+        model = SuggestedSchedule
+        fields = ['id', 'calendar', 'preference', 'events']
+
+    def create(self, validated_data):
+        events_data = validated_data.pop('events', [])  # Ensure events_data is a list
+        suggested_schedule = SuggestedSchedule.objects.create(**validated_data)
+        for event_data in events_data:
+            SuggestedEvent.objects.create(suggested_schedule=suggested_schedule, **event_data)
+        return suggested_schedule

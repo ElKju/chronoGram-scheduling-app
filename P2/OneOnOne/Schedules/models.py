@@ -46,3 +46,18 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.calendar.title} with {self.invitee.contact.first_name}: {str(self.timeslot.start_time)}-{str(self.timeslot.end_time)}"
+
+class SuggestedSchedule(models.Model):
+    calendar = models.ForeignKey(Calendar, on_delete=models.CASCADE, related_name='suggested_schedules')
+    preference = models.IntegerField(default=1)  # Priority of the suggested schedule for all invitees
+
+    def __str__(self):
+        return f"Suggested schedule for {self.calendar.title}"
+
+class SuggestedEvent(models.Model):
+    suggested_schedule = models.ForeignKey(SuggestedSchedule, on_delete=models.CASCADE, related_name='events')
+    availability = models.ForeignKey(Availability, on_delete=models.CASCADE)
+    invitee = models.ForeignKey(Invitee, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.suggested_schedule.calendar.title} - Availability for {self.invitee.contact.first_name} {self.pk}"
