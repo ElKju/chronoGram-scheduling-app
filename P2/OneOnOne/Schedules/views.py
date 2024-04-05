@@ -51,10 +51,18 @@ class CalendarViewSet(viewsets.ViewSet):
         if calendar.owner != request.user:
             return Response({"error": "You do not have permission to update this calendar."}, status=status.HTTP_403_FORBIDDEN)
         
-        serializer = CalendarSerializer(calendar, data=request.data, partial=True)  # Allow partial updates
+        serializer = CalendarSerializer(calendar, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            for invitee in Invitee.objects.filter(calendar__pk=serializer.data["id"]):
+                send_mail(
+                    f"Invitation to {invitee.calendar.title}",
+                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.first_name}.\n Please go to http://127.0.0.1:8000/invitee/{invitee.random_link_token} to rsvp",
+                    settings.EMAIL_HOST_USER,
+                    [invitee.contact.email_address],
+                    fail_silently=False
+                )
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk=None):

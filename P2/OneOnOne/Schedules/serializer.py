@@ -67,6 +67,29 @@ class CalendarSerializer(serializers.ModelSerializer):
             Invitee.objects.create(calendar=calendar, **invitee_data)
 
         return calendar
+    
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.owner = validated_data.get('owner', instance.owner)
+        instance.description = validated_data.get('description', instance.description)
+        instance.duration = validated_data.get('duration', instance.duration)
+
+        # Delete all existing availabilities and invitees
+        instance.availability_set.all().delete()
+        instance.invitees.all().delete()
+
+        # Create new availabilities
+        availability_data = validated_data.get('availability_set', [])
+        for availability_item in availability_data:
+            Availability.objects.create(calendar=instance, **availability_item)
+
+        # Create new invitees
+        invitees_data = validated_data.get('invitees', [])
+        for invitee_item in invitees_data:
+            Invitee.objects.create(calendar=instance, **invitee_item)
+
+        instance.save()
+        return instance
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
