@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Calendar, Invitee, Availability, Event, Priority, SuggestedSchedule
+from .models import Calendar, Invitee, Availability, Event, Priority, SuggestedSchedule, SuggestedEvent
 from .serializer import CalendarSerializer, InviteeSerializer, AvailabilitySerializer, EventSerializer, SuggestedScheduleSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
@@ -34,7 +34,7 @@ class CalendarViewSet(viewsets.ViewSet):
             for invitee in Invitee.objects.filter(calendar__pk=serializer.data["id"]):
                 send_mail(
                     f"Invitation to {invitee.calendar.title}",
-                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.first_name}.\n Please go to http://127.0.0.1:3000/invitee/{invitee.random_link_token} to rsvp",
+                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.username}.\n Please go to http://127.0.0.1:3000/invitee/{invitee.random_link_token} to rsvp",
                     settings.EMAIL_HOST_USER,
                     [invitee.contact.email_address],
                     fail_silently=False
@@ -58,7 +58,7 @@ class CalendarViewSet(viewsets.ViewSet):
             for invitee in Invitee.objects.filter(calendar__pk=serializer.data["id"]):
                 send_mail(
                     f"Invitation to {invitee.calendar.title} has been updated",
-                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.first_name}.\n Please go to http://127.0.0.1:3000/invitee/{invitee.random_link_token} to rsvp with the most recent timeslots",
+                    f"You have been invited to {invitee.calendar.title} by {invitee.calendar.owner.username}.\n Please go to http://127.0.0.1:3000/invitee/{invitee.random_link_token} to rsvp with the most recent timeslots",
                     settings.EMAIL_HOST_USER,
                     [invitee.contact.email_address],
                     fail_silently=False
@@ -277,10 +277,10 @@ class ScheduleSuggestView(APIView):
                 else:
                     inv[invitee.pk] = [priority_value]
 
-        print(inv)
-        print(slots)
         suggested_scheudules = self.suggestion_algo(inv, slots, 3)
-        print(suggested_scheudules)
+
+        if len(suggested_scheudules) == 0:
+            return Response({"error": "No valid schedules found."}, status=status.HTTP_400_BAD_REQUEST)
 
         suggested_scheudules_data = []
         for suggested_events, preference in suggested_scheudules:
@@ -298,13 +298,22 @@ class ScheduleSuggestView(APIView):
                 })
             suggested_scheudules_data.append(suggested_scheudule_data)
 
-        print(suggested_scheudules_data)
         serializer = SuggestedScheduleSerializer(data=suggested_scheudules_data, many=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+    def get(self, request, calendar_id):
+        try:
+            calendar = Calendar.objects.get(pk=calendar_id)
+        except Calendar.DoesNotExist:
+            return Response({"error": "Calendar not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        schedules = SuggestedSchedule.objects.filter(calendar=calendar)
+        serializer = SuggestedScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
+
     def suggest_schedule(self, invitees_dict, slots):
         slots_names = list(slots.keys())
         slots_weights = list(slots.values())
@@ -351,70 +360,38 @@ class ScheduleSuggestView(APIView):
     def suggestion_algo(self, invitees_dict, slots, desired_num):
         suggestion_lst, weight_lst = self.suggest_schedule(invitees_dict, slots)
         unique_lst = self.valid_schedules(suggestion_lst, weight_lst, len(invitees_dict))
-        if not len(unique_lst):
-            print("Cannot suggest any schedules.")
-            return 
-        iteration = 0
-        for i in range(len(unique_lst)):
-            if iteration == desired_num:
-                return
-            print(unique_lst[i][0], ":", unique_lst[i][1])
-            iteration += 1
-        if len(unique_lst) < desired_num:
-            print("Cannot suggest any more schedules")
+
         return unique_lst
 
+class SelectSuggestView(APIView):
+    def put(self, request, calendar_id, schedule_id):
+        try:
+            calendar = Calendar.objects.get(pk=calendar_id)
+            schedule = SuggestedSchedule.objects.get(pk=schedule_id, calendar=calendar)
+        except:
+            return Response({"error": "Calendar or schedule not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Get all the schedules for the calendar
+        schedules = SuggestedSchedule.objects.filter(calendar=calendar)
 
-# #############################################################
-# # Testing
-# ####################################################################
-# ####################################################################
-# # the weights of the DT slots belong to the User
-# slots = {"A": 1, "B": 2, "C": 2, "D": 1}
+        # Delete all the schedules except the selected one
+        for schedule in schedules:
+            if schedule.pk != schedule_id:
+                schedule.delete()
 
-# ###########################################################
-# inv1 = {
-#     "Mary": [0, 2, 2, 1],
-#     "Lucas": [1, 2, 2, 2],
-#     "Ronda": [0, 0, 1, 0]
-# }
-# desired_num = 6
-# print("How many schedules do you want:", desired_num)
-# print("\n valid schedule: \n")
+        # Update the calendar to be finalized
+        calendar.finalized = True
+        calendar.save()
 
-# suggestion_algo(inv1, slots, desired_num)
+        # Let invitees know they have been booked for a specific time slot
+        for invitee in Invitee.objects.filter(calendar=calendar):
+            event = SuggestedEvent.objects.get(invitee=invitee)
+            send_mail(
+                f"Your meeting time for {invitee.calendar.title} has been booked!",
+                f"You are scheduled to meet with {calendar.owner.username} on {event.availability.start_time.strftime('%Y-%m-%d at %H:%M')}-{event.availability.end_time.strftime('%H:%M')}.",
+                settings.EMAIL_HOST_USER,
+                [invitee.contact.email_address],
+                fail_silently=False
+            )
 
-# print("\n ##################################### \n")
-
-
-
-# ################################
-# inv2 = {
-#     "Mary": [0, 0, 0, 2],
-#     "Lucas": [0, 0, 0, 2],
-#     "Ronda": [1, 1, 1, 1]
-# }
-# desired_num = 4
-
-# print("How many schedules do you want:", desired_num)
-# print("\n valid schedule: \n")
-
-# suggestion_algo(inv2, slots, desired_num)
-
-# print("\n ##################################### \n")
-    
-# ##############################
-# inv3 = {
-#     "Mary": [0, 2, 0, 0],
-#     "Lucas": [2, 0, 0, 1],
-#     "Ronda": [2, 2, 0, 0]
-# }
-# desired_num = 5
-
-# print("How many schedules do you want:", desired_num)
-# print("\n valid schedule: \n")
-
-# suggestion_algo(inv3, slots, desired_num)
-
-# print("\n ##################################### \n")
+        return Response({"message": "Suggested schedule selected successfully"}, status=status.HTTP_200_OK)
