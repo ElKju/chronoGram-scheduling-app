@@ -8,8 +8,17 @@ import ManageContacts from './components/contacts/ManageContacts';
 import Header from './components/breadcrumbs/Header';
 import Footer from './components/breadcrumbs/Footer';
 import ManageSchedules from './components/schedules/ManageSchedules';
+import InviteeLandingPage from './components/invitees/InviteeLandingPage';
+import ContactPage from './components/breadcrumbs/contactus';
 
 const App: React.FC = () => {
+  
+  const currentUrl = window.location.href;
+  const parsedUrl = new URL(currentUrl);
+  const pathname = parsedUrl.pathname;
+  const parts = pathname.split("/");
+  const token = parts[2];
+
   return (
     <Router>
       <div className="App">
@@ -17,8 +26,10 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<LoginPage  />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/contact-us" element={<ContactPage />} />
           <Route path="/main" element={<MainPage />} />
           <Route path="/contacts/list/all" element={<ManageContacts />} />
+          <Route path={`/invitee/${token}`} element={<InviteeLandingPage token= {token}/>} />
           <Route path="/schedules/list/all" element={<ManageSchedules />} />
           <Route path="/account/edit" element={<AccountEditPage />} />
           {/* Add more routes as needed */}
