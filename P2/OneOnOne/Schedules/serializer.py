@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Calendar, Availability, Invitee, Event, Priority, SuggestedEvent, SuggestedSchedule
+from .models import Calendar, Availability, Invitee, Priority, SuggestedEvent, SuggestedSchedule
 from django.contrib.auth.models import User
 from Contacts.models import Contact
 import uuid
@@ -90,11 +90,6 @@ class CalendarSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-
-class EventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = ['id', 'calendar', 'invitee', 'timeslot']
 
 class SuggestedEventSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,8 +1,8 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Calendar, Invitee, Availability, Event, Priority, SuggestedSchedule, SuggestedEvent
-from .serializer import CalendarSerializer, InviteeSerializer, AvailabilitySerializer, EventSerializer, SuggestedScheduleSerializer
+from .models import Calendar, Invitee, Availability, Priority, SuggestedSchedule, SuggestedEvent
+from .serializer import CalendarSerializer, InviteeSerializer, AvailabilitySerializer, SuggestedScheduleSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
@@ -174,85 +174,15 @@ class InviteeOptionsView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class EventListView(APIView):
-    def get(self, request, calendar_id):
-        try:
-            calendar = Calendar.objects.get(pk=calendar_id)
-        except Calendar.DoesNotExist:
-            return Response({"error": "Calendar not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        events = Event.objects.filter(calendar=calendar)
-        serializer = EventSerializer(events, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, calendar_id):
-        try:
-            calendar = Calendar.objects.get(pk=calendar_id)
-        except Calendar.DoesNotExist:
-            return Response({"error": "Calendar not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        if calendar.owner != request.user:
-            return Response({"error": "You do not have permission to create events in this calendar."}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Check that the selected availability belongs to the specified calendar
-        timeslot = request.data["timeslot"]
-        invitee = request.data["invitee"]
-        if Availability.objects.get(pk=timeslot).calendar != calendar:
-            return Response({"error": f"Selected availability (id={timeslot}) does not belong to the specified calendar  (id={calendar})"}, status=status.HTTP_400_BAD_REQUEST)
-        # Check that the invitee is part of the specified calendar
-        if not Invitee.objects.filter(pk=invitee, calendar=calendar).exists():
-            return Response({"error": f"Invitee (id={invitee}) does not belong to the specified calendar (id={calendar})"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        request.data["calendar"] = calendar_id
-        serializer = EventSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(calendar=calendar)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class EventDetailView(APIView):
-    def get(self, request, calendar_id, event_id):
-        try:
-            event = Event.objects.get(pk=event_id, calendar__pk=calendar_id)
-        except Event.DoesNotExist:
-            return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = EventSerializer(event)
-        return Response(serializer.data)
-
-    def put(self, request, calendar_id, event_id):
-        try:
-            event = Event.objects.get(pk=event_id, calendar__pk=calendar_id)
-        except Event.DoesNotExist:
-            return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        if event.calendar.owner != request.user:
-            return Response({"error": "You do not have permission to edit this event."}, status=status.HTTP_403_FORBIDDEN)
-        
-        serializer = EventSerializer(event, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, calendar_id, event_id):
-        try:
-            event = Event.objects.get(pk=event_id, calendar__pk=calendar_id)
-        except Event.DoesNotExist:
-            return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        if event.calendar.owner != request.user:
-            return Response({"error": "You do not have permission to delete this event."}, status=status.HTTP_403_FORBIDDEN)
-        
-        event.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
 class ScheduleSuggestView(APIView):
     def post(self, request, calendar_id):
         try:
             calendar = Calendar.objects.get(pk=calendar_id)
         except Calendar.DoesNotExist:
             return Response({"error": "Calendar not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # If suggested schedules exist for this calendar, delete them
+        SuggestedSchedule.objects.filter(calendar=calendar).delete()
 
         # get availabilities
         availabilities = Availability.objects.filter(calendar=calendar)
