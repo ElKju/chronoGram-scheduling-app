@@ -91,12 +91,10 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
        isValid = false;
      }
      if (availabilities.length===0) {
-      console.log("i went in here")
       setTimeSlotError('At least one timeslot is required');
       isValid = false;
     }
     if (contact.length===0) {
-      console.log("i also went in here")
       setContactsError('At least one contact is required');
       isValid = false;
     }

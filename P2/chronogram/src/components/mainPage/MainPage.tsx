@@ -32,7 +32,7 @@ const Banner: React.FC = () => {
   return (
     <Paper elevation={3} style={{ width: '100%', padding: '40px', marginBottom: '20px', textAlign: 'center' }}>
       <Typography variant="h4" gutterBottom>
-        It Is Good To See You, User!
+        Hey There!
       </Typography>
       <Typography variant="body1">
         Welcome to ChronoGram! Create Or Manage Your 1:1 Schedules
