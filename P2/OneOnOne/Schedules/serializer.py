@@ -52,7 +52,7 @@ class CalendarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Calendar
-        fields = ['id', 'title', 'owner', 'description', 'duration', 'availability_set', 'invitees']
+        fields = ['id', 'title', 'owner', 'description', 'duration', 'availability_set', 'invitees', 'finalized']
 
     def create(self, validated_data):
         availability_data = validated_data.pop('availability_set', [])
