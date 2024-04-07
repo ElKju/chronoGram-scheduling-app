@@ -82,7 +82,7 @@ const ManageSchedules: React.FC = () => {
 
     } catch (error) {
       console.error('An error occurred:', error);
-      setError('Failed to fetch contacts. Please try again later.');
+      setError('Failed to fetch schedules. Please try again later.');
       setLoading(false);
     }
   };
@@ -91,6 +91,13 @@ const ManageSchedules: React.FC = () => {
     { field: 'title', headerName: 'Title', width: 150, headerAlign: 'center', align: 'center'},
     { field: 'description', headerName: 'Description', width: 150, headerAlign: 'center', align: 'center'},
     { field: 'duration', headerName: 'Duration', width: 150, headerAlign: 'center', align: 'center'},
+    { field: 'finalized', headerName: 'Status', width: 150, headerAlign: 'center', align: 'center',
+      renderCell: (params) => (
+        <span>
+          {params.value ? 'Finalized' : 'Unfinalized'}
+        </span>
+      )
+    },
     {
       field: 'actions',
       headerName: 'Actions',

@@ -40,6 +40,10 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({ open, onClose, on
     const [availabilities, setAvailabilities] = useState<Availability_SetFormData[]>([availabilityInit]);
     const [selectedAvailabilities, setSelectedAvailabilities] = useState<Availability_SetFormData[]>([]);
     const [currentContacts, setCurrentContacts] = useState<Contact[]>([]);
+    const [titleError, setTitleError] = useState('');
+    const [descriptionError, setDescriptionError] = useState('');
+    const [timeSlotError, setTimeSlotError] = useState('');
+    const [contactsError, setContactsError] = useState('');
 
     useEffect(() => {
       if (calendar!= null) {
@@ -109,6 +113,36 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({ open, onClose, on
     };
 
     const handleSubmit = () => {
+      
+      // Clear previous validation errors
+      setTitleError('');
+      setDescriptionError('');
+      setTimeSlotError('');
+      setContactsError('');
+ 
+      // Check for validation errors
+      let isValid = true;
+      if (!originalTitle) {
+        setTitleError('Title is required');
+        isValid = false;
+      }
+      if (!originalDescription) {
+        setDescriptionError('Description is required');
+        isValid = false;
+      }
+      if (availabilities.length===0) {
+        setTimeSlotError('At least one timeslot is required');
+        isValid = false;
+      }
+      if (currentContacts.length===0) {
+        setContactsError('At least one contact is required');
+        isValid = false;
+      }
+
+      if (!isValid) {
+        return;
+      }
+
       //Convert contacts to invitee form data
       const invitees: Invitees_FormData[] =  currentContacts.map(contact => ({
         contact: contact.id,
@@ -135,8 +169,6 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({ open, onClose, on
     };
 
   const onCloseModal = () => {
-    console.log(newDuration)
-    console.log(currentContacts)
     setNewDuration(dayjs(originalDuration, 'HH:mm:ss'))
     onClose();
   }
@@ -153,6 +185,8 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({ open, onClose, on
             onChange={(e) => setOriginalTitle(e.target.value)}
             fullWidth
             margin="normal"
+            error={!!titleError}
+            helperText={titleError}
           />
           <TextField
             label="Description"
@@ -161,6 +195,8 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({ open, onClose, on
             onChange={(e) => setOriginalDescription(e.target.value)}
             fullWidth
             margin="normal"
+            error={!!descriptionError}
+            helperText={descriptionError}
           />
           <br/>
           <br/>
@@ -195,6 +231,8 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({ open, onClose, on
                   variant="standard"
                   label="Selected Time Slots"
                   placeholder="Availabilities"
+                  error={!!timeSlotError}
+                  helperText={timeSlotError}
                 />
               )}
               onChange={(event, newValue) => {
@@ -219,6 +257,8 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({ open, onClose, on
                   variant="standard"
                   label="Invite Contacts"
                   placeholder="Invite Contacts"
+                  error={!!contactsError}
+                  helperText={contactsError}
                 />
               )}
             />

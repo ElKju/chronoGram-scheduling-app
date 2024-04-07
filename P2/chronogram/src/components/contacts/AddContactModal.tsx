@@ -13,7 +13,47 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSubm
   const [last_name, setLastName] = useState('');
   const [email_address, setEmail] = useState('');
 
+  // State variables for validation errors
+  const [firstNameError, setFirstNameError] = useState('');
+  const [lastNameError, setLastNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+
   const handleSubmit = () => {
+    // Clear previous validation errors
+    setFirstNameError('');
+    setLastNameError('');
+    setEmailError('');
+
+    // Check for validation errors
+    let isValid = true;
+    if (!first_name) {
+      setFirstNameError('First name is required');
+      isValid = false;
+    }
+    if (!last_name) {
+      setLastNameError('Last name is required');
+      isValid = false;
+    }
+    if (!email_address) {
+      setEmailError('Email is required');
+      isValid = false;
+    }
+
+    const isValidEmail = (email: string): boolean => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      };
+
+    if (!isValidEmail(email_address)){
+        setEmailError('Invalid email format');
+        isValid = false;
+    }
+    
+    // If validation fails, prevent form submission
+    if (!isValid) {
+      return;
+    }
+
     onSubmit({ first_name, last_name, email_address });
     setFirstName('');
     setLastName('');
@@ -30,6 +70,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSubm
           onChange={(e) => setFirstName(e.target.value)}
           fullWidth
           margin="normal"
+          error={!!firstNameError}
+          helperText={firstNameError}
         />
         <TextField
           label="Last Name"
@@ -37,6 +79,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSubm
           onChange={(e) => setLastName(e.target.value)}
           fullWidth
           margin="normal"
+          error={!!lastNameError}
+          helperText={lastNameError}
         />
         <TextField
           label="Email"
@@ -44,6 +88,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSubm
           onChange={(e) => setEmail(e.target.value)}
           fullWidth
           margin="normal"
+          error={!!emailError}
+          helperText={emailError}
         />
       </DialogContent>
       <DialogActions>

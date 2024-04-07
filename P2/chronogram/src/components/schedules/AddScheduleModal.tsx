@@ -26,26 +26,33 @@ interface AddScheduleModalProps {
 const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSubmit, contacts }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [value, setValue] = React.useState<Dayjs | null>(dayjs());
-  const [valueDuration, setDuration] = React.useState<Dayjs | null>(dayjs('2024-04-01T00:30'));
+  const [timeSlot, setTimeSlot] = React.useState<Dayjs | null>(dayjs());
+  const [duration, setDuration] = React.useState<Dayjs | null>(dayjs('2024-04-01T00:30'));
   const [availabilities, setAvailabilities] = useState<Availability_SetFormData[]>([]);
   const [selectedAvailabilities, setSelectedAvailabilities] = useState<Availability_SetFormData[]>([])
   const [contact, setContacts] =  useState<Contact[]>([]);
 
+  // State variables for validation errors
+  const [titleError, setTitleError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+  const [timeSlotError, setTimeSlotError] = useState('');
+  const [contactsError, setContactsError] = useState('');
+
+
   const handleAddAvailability = () => {
-    if (value && valueDuration) {
-      const hour = valueDuration.hour();
-      const minutes = valueDuration.minute();
+    if (timeSlot && duration) {
+      const hour = duration.hour();
+      const minutes = duration.minute();
 
       //End Date Computation:
-      const addingEndDateHours = value.add(hour,'hours')
+      const addingEndDateHours = timeSlot.add(hour,'hours')
       const addingEndDateMinutes = addingEndDateHours.add(minutes,'minutes')
       
       // Check if the start date already exists in availabilities
       const startDateExists = availabilities.some(availability => {
         // Use Dayjs methods for date comparison
-        return dayjs(availability.start_time).isSame(value, 'hours') &&
-              dayjs(availability.start_time).isSame(value, 'minutes');
+        return dayjs(availability.start_time).isSame(timeSlot, 'hours') &&
+              dayjs(availability.start_time).isSame(timeSlot, 'minutes');
       });
 
       if (startDateExists) {
@@ -54,7 +61,7 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
       } else {
         
         const newAvailability:Availability_SetFormData = {
-          start_time: value,
+          start_time: timeSlot,
           end_time: addingEndDateMinutes,
         };
 
@@ -66,6 +73,40 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
   };
 
   const handleSubmit = () => {
+
+     // Clear previous validation errors
+     setTitleError('');
+     setDescriptionError('');
+     setTimeSlotError('');
+     setContactsError('');
+ 
+     // Check for validation errors
+     let isValid = true;
+     if (!title) {
+       setTitleError('Title is required');
+       isValid = false;
+     }
+     if (!description) {
+       setDescriptionError('Description is required');
+       isValid = false;
+     }
+     if (availabilities.length===0) {
+      console.log("i went in here")
+      setTimeSlotError('At least one timeslot is required');
+      isValid = false;
+    }
+    if (contact.length===0) {
+      console.log("i also went in here")
+      setContactsError('At least one contact is required');
+      isValid = false;
+    }
+
+
+     if (!isValid) {
+      return;
+    }
+
+
     //Convert contacts to invitee form data
     const invitees: Invitees_FormData[] = contact.map(contact => ({
       contact: contact.id,
@@ -76,11 +117,11 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
       end_time: end_time.toISOString(), // Convert to ISO 8601 format
     }))
 
-    if(valueDuration){
+    if(duration){
       const calendarFormData: ScheduleFormData ={
         title: title,
         description: description,
-        duration: valueDuration.format('HH:mm:ss'),
+        duration: duration.format('HH:mm:ss'),
         availability_set: availabilitiesFinal,
         invitees: invitees,
       }
@@ -101,6 +142,8 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
             onChange={(e) => setTitle(e.target.value)}
             fullWidth
             margin="normal"
+            error={!!titleError}
+            helperText={titleError}
           />
           <TextField
             label="Description"
@@ -109,13 +152,15 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
             onChange={(e) => setDescription(e.target.value)}
             fullWidth
             margin="normal"
+            error={!!descriptionError}
+            helperText={descriptionError}
           />
           <br/>
           <br/>
           <TimeField
             label="Duration"
             defaultValue={dayjs('2022-04-17T15:30')}
-            value={valueDuration}
+            value={duration}
             format="HH:mm"
             onChange = {(newValue) => setDuration(newValue)}
           />
@@ -124,8 +169,8 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
           <DateTimePicker
             label="Available Time"
             defaultValue={null}
-            value={value}
-            onChange={(newValue) => setValue(newValue)}
+            value={timeSlot}
+            onChange={(newValue) => setTimeSlot(newValue)}
           />
           <Button onClick={handleAddAvailability}>Add Time Slot</Button>
           <Autocomplete
@@ -148,6 +193,8 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
                   variant="standard"
                   label="Selected Time Slots"
                   placeholder="Availabilities"
+                  error={!!timeSlotError}
+                  helperText={timeSlotError}
                 />
               )}
             />
@@ -165,6 +212,8 @@ const AddScheduleModal: React.FC<AddScheduleModalProps> = ({ open, onClose, onSu
                   variant="standard"
                   label="Invite Contacts"
                   placeholder="Invite Contacts"
+                  error={!!contactsError}
+                  helperText={contactsError}
                 />
               )}
             />
