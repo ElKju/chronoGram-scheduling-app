@@ -101,6 +101,8 @@ class SuggestedEventSerializer(serializers.ModelSerializer):
     def get_invitee_details(self, obj):
         invitee_data = {
             'contact': obj.invitee.contact.pk,
+            'first_name': obj.invitee.contact.first_name,
+            'last_name': obj.invitee.contact.last_name
         }
         return invitee_data
     
