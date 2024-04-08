@@ -212,7 +212,7 @@ class ScheduleSuggestView(APIView):
                 else: 
                     priority_value = 0
 
-                if invitee.contact.first_name in inv:
+                if invitee.pk in inv:
                     inv[invitee.pk].append(priority_value)
                 else:
                     inv[invitee.pk] = [priority_value]
@@ -259,9 +259,12 @@ class ScheduleSuggestView(APIView):
         slots_weights = list(slots.values())
         suggestion_lst = []
         weight_lst = []
+        print("invitees_dict:",invitees_dict)
+        print("slots:",slots)
 
         # sort invitees from smallest indv slot weight to highest indv slot weight
         sorted_invitees = sorted(invitees_dict, key=lambda invitee: sum(invitees_dict[invitee]))
+        print("sorted invitees:",sorted_invitees)
 
         while len(suggestion_lst) < 10:
             suggestion = {}
@@ -269,6 +272,7 @@ class ScheduleSuggestView(APIView):
             total_weight = 0
             for invitee in sorted_invitees:
                 slots_index = list(range(len(slots_weights)))
+                print("slots index:",slots_index)
                 random.shuffle(slots_index)
                 assigned_slot = -1
                 for i in slots_index:
