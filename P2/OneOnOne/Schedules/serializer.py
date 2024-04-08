@@ -92,6 +92,9 @@ class CalendarSerializer(serializers.ModelSerializer):
         return instance
 
 class SuggestedEventSerializer(serializers.ModelSerializer):
+    availability = AvailabilitySerializer()
+    invitee = InviteeSerializer()
+
     class Meta:
         model = SuggestedEvent
         fields = ['id', 'availability', 'invitee']

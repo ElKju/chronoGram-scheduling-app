@@ -170,6 +170,16 @@ class InviteeOptionsView(APIView):
         serializer = InviteeSerializer(invitee, data=request.data, partial=True)
 
         if serializer.is_valid():
+            # Check if all other invitees have already provided an availability
+            if all(invitee.selected_availability.exists() for invitee in invitee.calendar.invitees.exclude(pk=invitee.pk)):
+                # Send email to owner that all invitees have responded
+                send_mail(
+                    f"All invitees have responded to {invitee.calendar.title}",
+                    f"All invitees have responded to {invitee.calendar.title}. Please go to http://127.0.0.1:3000/schedules/{invitee.calendar.pk}/select/",
+                    settings.EMAIL_HOST_USER,
+                    [invitee.calendar.owner.email],
+                    fail_silently=False
+                )
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
