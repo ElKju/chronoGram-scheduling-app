@@ -250,6 +250,9 @@ class ScheduleSuggestView(APIView):
         except Calendar.DoesNotExist:
             return Response({"error": "Calendar not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        if not SuggestedSchedule.objects.filter(calendar=calendar):
+            self.post(request, calendar_id)
+
         schedules = SuggestedSchedule.objects.filter(calendar=calendar)
         serializer = SuggestedScheduleSerializer(schedules, many=True)
         return Response(serializer.data)
