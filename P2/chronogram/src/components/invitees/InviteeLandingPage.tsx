@@ -1,4 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
+import {
+  Container,
+  Typography,
+  Checkbox,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormLabel,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Box,
+  Paper
+} from '@mui/material';
 
 interface Availability {
   id: number;
@@ -15,7 +34,27 @@ interface InviteeLandingPageProps {
   token: string;
 }
 
-const InviteeLandingPage: React.FC<InviteeLandingPageProps> = ({token}) => {
+/*const mockAvailableTimes = [
+  {
+    id: 1,
+    start_time: new Date().toISOString(),
+    end_time: new Date(new Date().getTime() + 1 * 60 * 60 * 1000).toISOString(), // Plus 1 hour
+  },
+  {
+    id: 2,
+    start_time: new Date().toISOString(),
+    end_time: new Date(new Date().getTime() + 2 * 60 * 60 * 1000).toISOString(), // Plus 2 hours
+  },
+  {
+    id: 3,
+    start_time: new Date().toISOString(),
+    end_time: new Date(new Date().getTime() + 2 * 60 * 60 * 1000).toISOString(), // Plus 2 hours
+  },
+  // Add more mock time slots as needed
+];*/
+
+const InviteeLandingPage: React.FC<InviteeLandingPageProps> = ({ token }) => {
+  //const [availableTimes, setAvailableTimes] = useState<Availability[]>([]);
   const [availableTimes, setAvailableTimes] = useState<Availability[]>([]);
   const [selectedTimes, setSelectedTimes] = useState<SelectedAvailability[]>([]);
 
@@ -29,6 +68,10 @@ const InviteeLandingPage: React.FC<InviteeLandingPageProps> = ({token}) => {
   }, [token]);
 
   const [showModal, setShowModal] = useState(false);
+
+  const formatTimeRange = (start: string, end: string) => {
+    return `${dayjs(start).format('ddd, D MMM YYYY HH:mm:ss')} - ${dayjs(end).format('HH:mm:ss')} GMT`;
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -47,20 +90,30 @@ const InviteeLandingPage: React.FC<InviteeLandingPageProps> = ({token}) => {
     setShowModal(true);
   };
 
-  const handleCheckboxChange = (availabilityId: number, priority: number) => {
+  const handlePriorityChange = (availabilityId: number, newPriority: number) => {
     setSelectedTimes((prevSelectedTimes) => {
-      const isSelected = prevSelectedTimes.some(
-        (item) => item.availability === availabilityId
-      );
+      return prevSelectedTimes.map((time) => {
+        if (time.availability === availabilityId) {
+          return { ...time, priority: newPriority };
+        }
+        return time;
+      });
+    });
+  };
+
+  const handleCheckboxChange = (availabilityId: number) => {
+    setSelectedTimes((prevSelectedTimes) => {
+      const isSelected = prevSelectedTimes.some((item) => item.availability === availabilityId);
       if (isSelected) {
-        return prevSelectedTimes.filter(
-          (item) => item.availability !== availabilityId
-        );
+        // If it's already selected, remove it (set priority to 0)
+        return prevSelectedTimes.filter((item) => item.availability !== availabilityId);
       } else {
-        return [...prevSelectedTimes, { availability: availabilityId, priority }];
+        // If it's not selected, add it with the lowest priority by default
+        return [...prevSelectedTimes, { availability: availabilityId, priority: 1 }];
       }
     });
   };
+
 
   const closeModal = () => {
     setShowModal(false);
@@ -130,33 +183,51 @@ const InviteeLandingPage: React.FC<InviteeLandingPageProps> = ({token}) => {
   };
 
   return (
-    <div style={mainContainerStyle}>
-      <h1 style={headerStyle}>Select Your Available Times</h1>
-      <form onSubmit={handleSubmit} style={formStyle}>
-        {availableTimes.map((time) => (
-          <div key={time.id} style={timeSlotStyle}>
-            <label>
-              <input
-                type="checkbox"
-                value={time.id}
-                checked={selectedTimes.some(st => st.availability === time.id)}
-                onChange={() => handleCheckboxChange(time.id, 1)} // Adjust priority as needed
-              />
-              {new Date(time.start_time).toLocaleTimeString()} - {new Date(time.end_time).toLocaleTimeString()}
-            </label>
-          </div>
-        ))}
-        <button type="submit" style={submitButtonStyle}>Submit</button>
-      </form>
-      {showModal && (
-        <div style={modalBackdropStyle} onClick={closeModal}>
-          <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-            <p>Thank you for filling out your availability. The organizer of the event will be notified.</p>
-            <button onClick={closeModal}>OK</button>
-          </div>
-        </div>
-      )}
-    </div>
+    <Container maxWidth="md" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <Box sx={{ mt: 4 }}> {/* Add margin top */}
+        <Typography variant="h4" align="center" gutterBottom style={{ fontWeight: 'bold' }}>
+          Select Your Available Times
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          {availableTimes.map((time, index) => (
+            <Paper key={time.id} elevation={2} style={{ padding: '20px', marginTop: index === 0 ? '2rem' : '10px' }}>
+              <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedTimes.some((st) => st.availability === time.id)}
+                      onChange={() => handleCheckboxChange(time.id)}
+                      name={`time-${time.id}`}
+                    />}
+                  label={formatTimeRange(time.start_time, time.end_time)}
+                  labelPlacement="end"
+                />
+                <FormControl component="fieldset">
+                  <RadioGroup
+                    row
+                    aria-label="priority"
+                    name={`priority-${time.id}`}
+                    value={
+                      selectedTimes.find((st) => st.availability === time.id)?.priority || 0
+                    }
+                    onChange={(event) => handlePriorityChange(time.id, parseInt(event.target.value))}
+                  >
+                    <FormControlLabel value={2} control={<Radio />} label="High Priority" style={{ color: 'gray' }} />
+                    <FormControlLabel value={1} control={<Radio />} label="Low Priority" style={{ color: 'gray' }} />
+                  </RadioGroup>
+                </FormControl>
+              </Box>
+            </Paper>
+          ))}
+          <Box display="flex" justifyContent="center" mt={4}> {/* Increased margin top for the submit button */}
+            <Button type="submit" variant="contained" color="primary">
+              Submit
+            </Button>
+          </Box>
+        </form>
+      </Box>
+
+    </Container>
   );
 };
 
