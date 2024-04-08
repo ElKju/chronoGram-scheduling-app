@@ -271,8 +271,8 @@ class ScheduleSuggestView(APIView):
                 slots_index = list(range(len(slots_weights)))
                 random.shuffle(slots_index)
                 assigned_slot = -1
-                for i  in slots_index:
-                    weight_i = invitees_dict[invitee][i] + slots_weights[i]
+                for i in slots_index:
+                    # weight_i = invitees_dict[invitee][i] + slots_weights[i]
                     if invitees_dict[invitee][i] != 0 and (i not in used_slot):
                         assigned_slot = i
                 if assigned_slot == -1:
