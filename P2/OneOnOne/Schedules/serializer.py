@@ -94,6 +94,7 @@ class CalendarSerializer(serializers.ModelSerializer):
 class SuggestedEventSerializer(serializers.ModelSerializer):
     invitee_details = serializers.SerializerMethodField()
     availability_details = serializers.SerializerMethodField()
+    
     class Meta:
         model = SuggestedEvent
         fields = ['id', 'availability', 'invitee', 'invitee_details', 'availability_details']
@@ -113,12 +114,14 @@ class SuggestedEventSerializer(serializers.ModelSerializer):
         }
         return availability_data
 
+
 class SuggestedScheduleSerializer(serializers.ModelSerializer):
     events = SuggestedEventSerializer(many=True)
+    finalized = serializers.SerializerMethodField()
 
     class Meta:
         model = SuggestedSchedule
-        fields = ['id', 'calendar', 'preference', 'events']
+        fields = ['id', 'calendar', 'preference', 'events', 'finalized']
 
     def create(self, validated_data):
         events_data = validated_data.pop('events', [])  # Ensure events_data is a list
@@ -126,3 +129,6 @@ class SuggestedScheduleSerializer(serializers.ModelSerializer):
         for event_data in events_data:
             SuggestedEvent.objects.create(suggested_schedule=suggested_schedule, **event_data)
         return suggested_schedule
+
+    def get_finalized(self, obj):
+        return obj.calendar.finalized
