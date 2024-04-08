@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, CircularProgress} from '@mui/material';
+import { Breadcrumbs, Button, CircularProgress, Link, Stack, Typography} from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -7,6 +7,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddContactModal from './AddContactModal';
 import { Contact, ContactFormData } from './contactInterfaces';
 import EditContactModal from './EditContactModal';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { useNavigate } from 'react-router-dom';
 
 const ManageContacts: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -23,7 +25,7 @@ const ManageContacts: React.FC = () => {
   }
   const [selectedContact, setSelectedContact] = useState<Contact>(contactInit);
   const [url, setUrl] = useState<string>('http://127.0.0.1:8000/contacts/list/all');
-
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchContacts(url);
@@ -166,6 +168,17 @@ const ManageContacts: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
+  const handleButtonClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    event.preventDefault();
+    navigate('/main'); 
+  };
+
+  const breadcrumbs = [
+    <Link underline="hover" key="1" color="inherit" href="/" onClick={handleButtonClick}>Main Page</Link>,
+    <Link underline="hover" key="2" color="inherit">Manage Contacts</Link>,
+  ];
+
+
   return (
     <div
       style={{
@@ -176,40 +189,45 @@ const ManageContacts: React.FC = () => {
         paddingBottom: '3rem',
       }}
     >
-      <h1>Manage Contacts</h1>
-      <br/>
-      <div style={{ flex: '1', overflowY: 'auto' }}>
-      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-start' }}>
-      <Button
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={() => setIsAddContactModalOpen(true)}
-        style={{ textTransform: 'none', fontSize: '1rem', padding: '5px 10px' }}
+      <Breadcrumbs
+        sx={{ paddingTop:'20px'}}
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
       >
-        Add Contact
-      </Button>
-      <AddContactModal
-        open={isAddContactModalOpen}
-        onClose={() => setIsAddContactModalOpen(false)}
-        onSubmit={handleAddContact}
-      />
-      </div>
-        <DataGrid 
-          rowCount={totalContacts} 
-          rows={contacts} 
-          columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10,
+        {breadcrumbs}
+      </Breadcrumbs>
+        <h1>Manage Contacts</h1>
+        <br />
+        <div style={{ flex: '1', overflowY: 'auto' }}>
+          <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-start' }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setIsAddContactModalOpen(true)}
+              style={{ textTransform: 'none', fontSize: '1rem', padding: '5px 10px' }}
+            >
+              Add Contact
+            </Button>
+            <AddContactModal
+              open={isAddContactModalOpen}
+              onClose={() => setIsAddContactModalOpen(false)}
+              onSubmit={handleAddContact} />
+          </div>
+          <DataGrid
+            rowCount={totalContacts}
+            rows={contacts}
+            columns={columns}
+            initialState={{
+              pagination: {
+                paginationModel: {
+                  pageSize: 10,
+                },
               },
-            },
-          }}
-          paginationMode="client"
-          pageSizeOptions={[10]}
-        />
+            }}
+            paginationMode="client"
+            pageSizeOptions={[10]} />
+        </div>
       </div>
-    </div>
   );
 };
 

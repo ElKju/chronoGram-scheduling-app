@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { Breadcrumbs, Link } from '@mui/material';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const AccountEditPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -7,6 +10,7 @@ const AccountEditPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const navigate = useNavigate();
 
   const handleEditAccount = async () => {
     try {
@@ -28,8 +32,25 @@ const AccountEditPage: React.FC = () => {
     }
   };
 
+  const handleButtonClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    event.preventDefault();
+    navigate('/main'); 
+  };
+
+  const breadcrumbs = [
+    <Link underline="hover" key="1" color="inherit" href="/" onClick={handleButtonClick}>Main Page</Link>,
+    <Link underline="hover" key="2" color="inherit">Edit Account</Link>,
+  ];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
+      <Breadcrumbs
+        sx={{ paddingTop:'20px'}}
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+      >
+        {breadcrumbs}
+      </Breadcrumbs>
       <h2 style={{ fontSize: '1.8rem', marginBottom: '20px' }}>Edit Account</h2>
       <input
         type="text"

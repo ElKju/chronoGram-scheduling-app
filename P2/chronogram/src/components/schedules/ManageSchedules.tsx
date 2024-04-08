@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, CircularProgress } from '@mui/material';
+import { Breadcrumbs, Button, CircularProgress, Link } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -9,6 +9,8 @@ import { Availability_Set, Calendar, Invitees, ScheduleFormData } from './schedu
 import AddScheduleModal from './AddScheduleModal';
 import EditScheduleModal from './EditScheduleModal';
 import dayjs, { Dayjs } from 'dayjs';
+import { useNavigate } from 'react-router-dom';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const ManageSchedules: React.FC = () => {
   
@@ -19,6 +21,7 @@ const ManageSchedules: React.FC = () => {
   const [totalSchedules, setTotalSchedules] = useState<number>(0);
   const [isAddScheduleModalOpen, setIsAddScheduleModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const navigate = useNavigate();
   
   const availability: Availability_Set = {
     id: 1,
@@ -205,6 +208,16 @@ const ManageSchedules: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
+  const handleButtonClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    event.preventDefault();
+    navigate('/main'); 
+  };
+
+  const breadcrumbs = [
+    <Link underline="hover" key="1" color="inherit" href="/" onClick={handleButtonClick}>Main Page</Link>,
+    <Link underline="hover" key="2" color="inherit">Manage Schedules</Link>,
+  ];
+
   return (
     <div
       style={{
@@ -215,6 +228,13 @@ const ManageSchedules: React.FC = () => {
         paddingBottom: '3rem',
       }}
     >
+      <Breadcrumbs
+        sx={{ paddingTop:'20px'}}
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+      >
+        {breadcrumbs}
+      </Breadcrumbs>
       <h1>Manage Schedules</h1>
       <br/>
       <div style={{ flex: '1', overflowY: 'auto' }}>
