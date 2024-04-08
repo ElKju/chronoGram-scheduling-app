@@ -10,6 +10,7 @@ import Footer from './components/breadcrumbs/Footer';
 import ManageSchedules from './components/schedules/ManageSchedules';
 import InviteeLandingPage from './components/invitees/InviteeLandingPage';
 import ContactPage from './components/breadcrumbs/contactus';
+import SelectSuggestedSchedule from './components/finalizedSchedules/SelectSuggestedSchedule';
 
 const App: React.FC = () => {
   
@@ -29,8 +30,9 @@ const App: React.FC = () => {
           <Route path="/contact-us" element={<ContactPage />} />
           <Route path="/main" element={<MainPage />} />
           <Route path="/contacts/list/all" element={<ManageContacts />} />
-          <Route path={`/invitee/${token}`} element={<InviteeLandingPage token= {token}/>} />
           <Route path="/schedules/list/all" element={<ManageSchedules />} />
+          <Route path={`/schedules/${token}/select/`} element={<SelectSuggestedSchedule token= {token}/>} />
+          <Route path={`/invitee/${token}`} element={<InviteeLandingPage token= {token}/>} />
           <Route path="/account/edit" element={<AccountEditPage />} />
           {/* Add more routes as needed */}
         </Routes>

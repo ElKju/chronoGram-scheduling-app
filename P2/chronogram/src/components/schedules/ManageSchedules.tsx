@@ -5,12 +5,15 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Contact } from '../contacts/contactInterfaces';
-import { Availability_Set, Calendar, Invitees, ScheduleFormData } from './scheduleInterfaces';
+import { Availability_Set, Availability_SetFormDataFinal, Calendar, Invitees, ScheduleFormData } from './scheduleInterfaces';
 import AddScheduleModal from './AddScheduleModal';
 import EditScheduleModal from './EditScheduleModal';
 import dayjs, { Dayjs } from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Invitee_Details, events, suggestedSchedules } from '../finalizedSchedules/suggestedSchedulesInterfaces';
+import ViewScheduleModal from './ViewScheduleModal';
 
 const ManageSchedules: React.FC = () => {
   
@@ -21,12 +24,17 @@ const ManageSchedules: React.FC = () => {
   const [totalSchedules, setTotalSchedules] = useState<number>(0);
   const [isAddScheduleModalOpen, setIsAddScheduleModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
   const navigate = useNavigate();
   
   const availability: Availability_Set = {
     id: 1,
     start_time: dayjs(),
     end_time: dayjs(),
+  }
+  const availabilityInit: Availability_SetFormDataFinal = {
+    start_time: dayjs().toISOString(),
+    end_time: dayjs().toISOString(),
   }
   const inviteeInit: Invitees = {
     contact:111111111111,
@@ -43,7 +51,27 @@ const ManageSchedules: React.FC = () => {
     availability_set: [availability],
     invitees: [inviteeInit]
   }
+
+  const inviteeInitSuggestedSchedule: Invitee_Details = {
+    contact: 1,
+    first_name:"testing",
+    last_name:"testing",
+  }
+
+  const eventInit: events  = {
+    availability_details: availabilityInit,
+    invitee_details: inviteeInitSuggestedSchedule
+  }
+  
+  const selectedScheduleInit: suggestedSchedules = {
+    id: 111111111111,
+    events: [eventInit],
+    calendar: 11111111111,
+    finalized: true,
+  }
   const [selectedSchedule, setSelectedSchedule] = useState<Calendar>(scheduleInit);
+  const [selectedViewSchedule, setSelectedViewSchedule] = useState<suggestedSchedules[]>([selectedScheduleInit]);
+  const [selectedViewCalendar, setSelectedViewCalendar] = useState<Calendar>(scheduleInit);
 
 
   useEffect(() => {
@@ -108,23 +136,38 @@ const ManageSchedules: React.FC = () => {
       width: 175,
       renderCell: (params) => (
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button 
-            style={{ textTransform: 'none', fontSize: '1rem' }} 
-            startIcon={<EditIcon />} 
-            onClick={() => handleEditButtonClick(params.row.id)}>Edit</Button>
-            <EditScheduleModal
+          {params.row.finalized ? (
+            <Button 
+              style={{ textTransform: 'none', fontSize: '1rem' }} 
+              startIcon={<VisibilityIcon />} 
+              onClick={() => handleViewButtonClick(params.row.id)}>
+              View
+            </Button>
+          ) : (
+            <Button 
+              style={{ textTransform: 'none', fontSize: '1rem' }} 
+              startIcon={<EditIcon />} 
+              onClick={() => handleEditButtonClick(params.row.id)}>Edit
+              </Button>
+            )}
+              <ViewScheduleModal
+              open={isViewModalOpen}
+              onClose={() => setIsViewModalOpen(false)}
+              suggestedSchedule={selectedViewSchedule}
+              calendar={selectedViewCalendar}
+              />
+              <EditScheduleModal
               open={isEditModalOpen}
               onClose={() => setIsEditModalOpen(false)}
               onSubmit={handleEditSchedule} 
               contacts={contacts}
-              calendar={selectedSchedule}/>
+              calendar={selectedSchedule}/> 
           <Button 
             style = {{textTransform: 'none', fontSize:'1rem'}} 
             startIcon = {<DeleteIcon/>} 
             onClick={() => handleDelete(params.row.id)}>Delete</Button>
         </div>
       ),
-      
     },
   ];
 
@@ -142,10 +185,11 @@ const ManageSchedules: React.FC = () => {
       if (!response.ok) {
         throw new Error('Failed to add schedules');
       }
+      
     } catch (error) {
       console.error('Error adding schedules:', error);
     }
-    setIsAddScheduleModalOpen(false);
+    setIsAddScheduleModalOpen(true);
     window.location.reload()
   };
 
@@ -157,6 +201,34 @@ const ManageSchedules: React.FC = () => {
       setIsEditModalOpen(true);
     } else {
       console.error(`Contact with ID ${scheduleId} not found.`);
+    }
+  };
+
+  const handleViewButtonClick = async (calendarId: number) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`http://127.0.0.1:8000/calendars/${calendarId}/suggest/`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+
+      const suggestedSchedulesInfo = data.map((schedule: suggestedSchedules) => ({ ...schedule}));
+      const scheduleSelected = schedules.find(schedule => schedule.id === calendarId);
+      if (scheduleSelected!==null && scheduleSelected!==undefined && suggestedSchedulesInfo!==null && scheduleSelected!==undefined) {
+        setSelectedViewCalendar(scheduleSelected);
+        setSelectedViewSchedule(suggestedSchedulesInfo);
+        setIsViewModalOpen(true);
+      }
+      if (!response.ok) {
+        throw new Error('Failed to edit schedule');
+      }
+      
+    } catch (error) {
+      console.error('Error editing schedule:', error);
     }
   };
 
