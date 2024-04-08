@@ -12,12 +12,15 @@ const ContactPage: React.FC = () => {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
+        
         const templateParams = {
             from_name: name,
+            from_email: 'csc309.do.not.reply@gmail.com',
+            to_email: 'csc309.do.not.reply@gmail.com',
             email: email,
             message: message,
         };
+        
         console.log("Email:", email);
         console.log("Message:", message);
 
