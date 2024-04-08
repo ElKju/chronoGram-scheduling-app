@@ -92,12 +92,24 @@ class CalendarSerializer(serializers.ModelSerializer):
         return instance
 
 class SuggestedEventSerializer(serializers.ModelSerializer):
-    availability = AvailabilitySerializer()
-    invitee = InviteeSerializer()
-
+    invitee_details = serializers.SerializerMethodField()
+    availability_details = serializers.SerializerMethodField()
     class Meta:
         model = SuggestedEvent
-        fields = ['id', 'availability', 'invitee']
+        fields = ['id', 'availability', 'invitee', 'invitee_details', 'availability_details']
+    
+    def get_invitee_details(self, obj):
+        invitee_data = {
+            'contact': obj.invitee.contact.pk,
+        }
+        return invitee_data
+    
+    def get_availability_details(self, obj):
+        availability_data = {
+            'start_time': obj.availability.start_time,
+            'end_time': obj.availability.end_time
+        }
+        return availability_data
 
 class SuggestedScheduleSerializer(serializers.ModelSerializer):
     events = SuggestedEventSerializer(many=True)
