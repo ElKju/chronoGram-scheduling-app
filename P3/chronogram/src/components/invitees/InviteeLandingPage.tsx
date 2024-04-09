@@ -1,3 +1,4 @@
+import { Checkbox, FormControlLabel, MenuItem, Select } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 
 interface Availability {
@@ -47,16 +48,15 @@ const InviteeLandingPage: React.FC<InviteeLandingPageProps> = ({token}) => {
     setShowModal(true);
   };
 
-  const handleCheckboxChange = (availabilityId: number, priority: number) => {
+  const handleCheckboxChange = (availabilityId: number, priority: number, isChecked: boolean) => {
     setSelectedTimes((prevSelectedTimes) => {
-      const isSelected = prevSelectedTimes.some(
-        (item) => item.availability === availabilityId
-      );
-      if (isSelected) {
+      if (!isChecked) {
+        // If the checkbox is unchecked, remove the availability from selectedTimes
         return prevSelectedTimes.filter(
           (item) => item.availability !== availabilityId
         );
       } else {
+        // If the checkbox is checked, add the availability to selectedTimes
         return [...prevSelectedTimes, { availability: availabilityId, priority }];
       }
     });
@@ -129,22 +129,31 @@ const InviteeLandingPage: React.FC<InviteeLandingPageProps> = ({token}) => {
     width: '50%', // Reduces the width of the button
   };
 
+  const [selectedPriority, setSelectedPriority] = useState(1); // Initial state is low priority
+
   return (
     <div style={mainContainerStyle}>
       <h1 style={headerStyle}>Select Your Available Times</h1>
       <form onSubmit={handleSubmit} style={formStyle}>
         {availableTimes.map((time) => (
-          <div key={time.id} style={timeSlotStyle}>
-            <label>
-              <input
-                type="checkbox"
-                value={time.id}
+          <div>
+          <FormControlLabel
+            control={
+              <Checkbox
                 checked={selectedTimes.some(st => st.availability === time.id)}
-                onChange={() => handleCheckboxChange(time.id, 1)} // Adjust priority as needed
+                onChange={(e) => handleCheckboxChange(time.id, selectedPriority, e.target.checked)} // Adjust priority as needed
               />
-              {new Date(time.start_time).toLocaleTimeString()} - {new Date(time.end_time).toLocaleTimeString()}
-            </label>
-          </div>
+            }
+            label={`${new Date(time.start_time).toDateString()}: ${new Date(time.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${new Date(time.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
+          />
+          <Select
+            value={selectedPriority === 1 ? 'low' : 'high'}
+            onChange ={(event) => setSelectedPriority(event.target.value === 'high' ? 2 : 1)}
+          >
+            <MenuItem value="low">Low</MenuItem>
+            <MenuItem value="high">High</MenuItem>
+          </Select>
+        </div>
         ))}
         <button type="submit" style={submitButtonStyle}>Submit</button>
       </form>
