@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { TextField } from "@mui/material";
 import { GoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -122,7 +121,6 @@ const LoginPage: React.FC = () => {
           console.log("Login Failed");
         }}
       />
-
       <p style={{ marginTop: "20px", fontSize: "1.3rem", padding: "20px" }}>
         Don't have an account?{" "}
         <Link
