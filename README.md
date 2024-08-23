@@ -25,7 +25,7 @@ To set up the project locally, follow these steps:
 1. **Clone the Repository**:
     ```bash
     git clone https://github.com/ElKju/csc309_p3.git
-    cd chronoGram
+    cd csc309_p3
     ```
 
 2. **Create a Virtual Environment**:
